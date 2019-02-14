@@ -17,8 +17,8 @@ from models import Path, db
 
 d = Dna()
 #####
-GRID_SIZE = 4
-DESTINATION = ("3:2:N")
+GRID_SIZE = 5
+DESTINATION = ("2:3:W")  # 2:3:W
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,11 +30,6 @@ def feed_db() :
     source,path,cost = graph.shortest_paths(DESTINATION)
     #print dest, a , b
     for i in range (GRID_SIZE*GRID_SIZE*4):
-        #print len(source)
-        #print path[i]
-        #print cost[i]
-        #if source [i] == DESTINATION :
-            #path[i] = "target"
         u = Path(source = str(source[i]), path = str(path[i]), cost=str(cost[i]))
         db.session.add(u)
         db.session.commit()
@@ -77,7 +72,7 @@ def path_planning():
         else :
             orientation = value
     path_to_node, cost_to_node  = reconstruct(x,y,GRID_SIZE)
-    print path_to_node , cost_to_node 
+    #print path_to_node , cost_to_node 
     return_path = []
     cost = float("inf")
     target_node = 0 
@@ -85,13 +80,13 @@ def path_planning():
         if not candidate_path:
             continue ;
         temp =Path.query.filter(Path.source.startswith(str(candidate_path[0]))).all()
-        print candidate_path
+        #print candidate_path
         for temp in temp :
-            print temp.source
+            #print temp.source
             if temp.source == DESTINATION:
                 print "Target eliminitated"
                 target_node = temp.source
-                print target_node
+                #print target_node
                 almost = target_node.rsplit(":",1)[0]
                 a = almost.rsplit(":",1)[0]
                 b = almost.rsplit(":",1)[1]
@@ -104,8 +99,9 @@ def path_planning():
                 return_path.append(ast.literal_eval(temp.path))
                 cost = temp.cost + cost_to_node[path_to_node.index(candidate_path)]
                 target_node = temp.source
-                print cost 
-    print return_path
+                #print cost 
+    #print return_path
+    #print target_node
     if target_node.rsplit(":",1)[0] == str(iref)+str(":")+str(jref):
         print "eimai hdh se auto ton kombo koitaw to epomeno bhma"
         for i in range (len(return_path[0])) :
@@ -128,10 +124,11 @@ def reconstruct(x,y,GRID_SIZE):
     costs = []
     for i in range (GRID_SIZE):
         for j in range (GRID_SIZE):
-	    distance = math.sqrt( ((x-((j+1)*CELL_SIZE))**2)+((y-((i+1)*CELL_SIZE))**2) )
+	    distance = math.sqrt( ((x-((j+1)*CELL_SIZE-CELL_SIZE/2))**2)+((y-((i+1)*CELL_SIZE-CELL_SIZE/2))**2) )
+            #print i,j
             #print distance
-	    if distance < 80 :
-		print ("I am connecting with: "+str(i)+str(j))
+	    if distance < 280 :
+		#print ("I am connecting with: "+str(i)+str(j))
 		temp = []
 		temp.append(str(i)+":"+str(j))
 		costs.append(1)

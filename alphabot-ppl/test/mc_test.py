@@ -9,27 +9,13 @@ M = MicroControler()
 # - sth gwnia shmainei stripse deksia
 # + sth gwnia shmainei stripse aristera
 
-a=[0,0,0,0.5,0,0]
-'''
-M.move_and_control(a)
-time.sleep(2)
-time.sleep(2)
-a=[0,0,0,0,0,-90]
-M.move_and_control(a)
-time.sleep(2)
-a=[0,0,0,0.5,0,0]
-M.move_and_control(a)
-time.sleep(2)
-a=[0,0,0,0,0,60]
-M.move_and_control(a)
-time.sleep(2)
-a=[0,0,0,0,0,60]
-M.move_and_control(a)
-time.sleep(2)
-a=[0,0,0,0.5,0,0]
+#a=[0,0,0,0,0,90]
+
+a=[0,0,0,-0.2,0,0]
+
 M.move_and_control(a)
 #a=[0,0,0,0,0,-1.65]
-'''
+#a=[0,0,0,0,0,-1.65]
 
 #a=[0,0,0,0,0,-0.351]   # 20 mories 
 #a=[0,0,0,0,0,-0.5235]  # 30 moires 
@@ -37,8 +23,7 @@ M.move_and_control(a)
 #a=[0,0,0,0,0,-1.0471]  # 60 moires 
 #a=[0,0,0,0,0,-1.65]    # 90 mories 
 #a=[0,0,0,0,0,20]
-M.move_and_control(a)
-time.sleep(2)
+#M.move_and_control(a)
 
 
 

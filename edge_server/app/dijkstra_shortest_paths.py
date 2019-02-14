@@ -43,10 +43,10 @@ class GraphShortestPaths:
                     list.append(temp)
                     ########################################################### for x 
                     if k == 1 :
-                        if j == GRID_SIZE -1:
+                        if j == 0:
                             continue
                         else: 
-                            right = j + 1 
+                            right = j - 1 
                         temp = [] 
                         temp.append(str(i)+":"+str(j)+strings[k])
                         temp.append(str(i)+":"+str(right)+strings[k])
@@ -56,10 +56,10 @@ class GraphShortestPaths:
 
                     if k == 3 :
                         
-                        if j == 0:
+                        if j == GRID_SIZE - 1 :
                             continue
                         else : 
-                            left = j - 1 
+                            left = j + 1 
                         temp = [] 
                         temp.append(str(i)+":"+str(j)+strings[k])
                         temp.append(str(i)+":"+str(left)+strings[k])
@@ -68,10 +68,10 @@ class GraphShortestPaths:
 
                     ################## for y 
                     if k == 0 :
-                        if i == 0:
+                        if i == GRID_SIZE -1 :
                             continue
                         else : 
-                            up = i - 1 
+                            up = i + 1 
                         temp = [] 
                         temp.append(str(i)+":"+str(j)+strings[k])
                         temp.append(str(up)+":"+str(j)+strings[k])
@@ -79,10 +79,10 @@ class GraphShortestPaths:
                         list.append(temp) 
 
                     if k == 2 :
-                        if i == GRID_SIZE - 1:
+                        if i == 0:
                             continue
                         else: 
-                            down = i + 1 
+                            down = i - 1 
                         temp = [] 
                         temp.append(str(i)+":"+str(j)+strings[k])
                         temp.append(str(down)+":"+str(j)+strings[k])
@@ -188,20 +188,21 @@ class GraphShortestPaths:
 	return_path = []
 	return_source=[]
 	return_cost = []
-	for path in paths :
+	
+        for path in paths :
 	    temp = []
 	    for x in path :
 		#print x
 		cell_id =  x.rsplit(':',1)[0]
 		ori = x.rsplit(':',1)[1]
-                if ori == "W":
-                    ori = "E"
-                elif ori == "E":
-                    ori = "W"
-                elif ori == "N":
-                    ori = "S"
-                elif ori == "S":
-                    ori = "N"
+                #if ori == "W":
+                #    ori = "E"
+                #elif ori == "E":
+                #    ori = "W"
+                #elif ori == "N":
+                #    ori = "S"
+                #elif ori == "S":
+                #    ori = "N"
 		temp.append(cell_id+":"+ori)
 		if path.index(x) == 0 :
                     return_source.append(cell_id+":"+ori)
@@ -213,7 +214,8 @@ class GraphShortestPaths:
 	return_source.insert(0,DESTINATION)
 	return_path.insert(0,DESTINATION)
         return_cost.insert(0,0)
-	return  return_source , return_path, return_cost
+#	return  return_source , return_path, return_cost
+	return  source , paths, total_costs
 
 
 
