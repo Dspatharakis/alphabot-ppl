@@ -1,20 +1,31 @@
 from collections import deque, namedtuple
 import time
-
-
-CELL_SIZE = 50 # cm MUST GO TO CONFIG.YAML 
+import numpy as np 
 
 # we'll use infinity as a default distance to nodes.
 inf = float('inf')
 Edge = namedtuple('Edge', 'start, end, cost')
-
-
+obstacles=[[[0,0],[50,0],[75,50],[75,0]],[[55,78],[55,67],[80,67],[80,78]],[[90,67],[90,78],[120,78],[120,67]]]
+#obstacles = []
+CELL_SIZE = 25
 def make_edge(start, end, cost=1):
   return Edge(start, end, cost)
 
 
 class GraphShortestPaths:
     def __init__(self, GRID_SIZE):
+        s = (GRID_SIZE,GRID_SIZE)
+        lineofsightmatrix =np.zeros((s),dtype=int)
+        for rect in obstacles:
+            #print rect
+            for obstacle in rect:
+                obi = obstacle[0]/CELL_SIZE
+                obj = obstacle[1]/CELL_SIZE
+                #print obstacle
+                #print obi,obj
+                lineofsightmatrix[obi][obj]=1
+        print lineofsightmatrix
+
         list = [] 
         temp = []
         strings = [":N",":E",":S",":W"]
@@ -22,37 +33,39 @@ class GraphShortestPaths:
             for j in range(GRID_SIZE):
                 for k in range (0,len(strings)):
                     ######################### for orientation
-                    if k == 0:
-                        anticlockwise = len(strings) - 1
-                    else : 
-                        anticlockwise = k - 1 
-                    if k == len(strings)-1:
-                        clockwise = 0
-                    else: 
-                        clockwise = k + 1
-                    temp = [] 
-                    temp.append(str(i)+":"+str(j)+strings[k])
-                    temp.append(str(i)+":"+str(j)+strings[anticlockwise])
-                    temp.append(1)
-                    list.append(temp) 
+                    if lineofsightmatrix[i][j] == 0 :
+                        if k == 0:
+                            anticlockwise = len(strings) - 1
+                        else : 
+                            anticlockwise = k - 1 
+                        if k == len(strings)-1:
+                            clockwise = 0
+                        else: 
+                            clockwise = k + 1
+                        temp = []
+                        temp.append(str(i)+":"+str(j)+strings[k])
+                        temp.append(str(i)+":"+str(j)+strings[anticlockwise])
+                        temp.append(1)
+                        list.append(temp) 
 
-                    temp = [] 
-                    temp.append(str(i)+":"+str(j)+strings[k])
-                    temp.append(str(i)+":"+str(j)+strings[clockwise])
-                    temp.append(1)
-                    list.append(temp)
-                    ########################################################### for x 
+                        temp = [] 
+                        temp.append(str(i)+":"+str(j)+strings[k])
+                        temp.append(str(i)+":"+str(j)+strings[clockwise])
+                        temp.append(1)
+                        list.append(temp)
+                    ########################################################### for E the edges are reversed  
                     if k == 1 :
                         if j == 0:
                             continue
                         else: 
                             right = j - 1 
-                        temp = [] 
-                        temp.append(str(i)+":"+str(j)+strings[k])
-                        temp.append(str(i)+":"+str(right)+strings[k])
-                        temp.append(1)
-                        list.append(temp)
-
+                        if lineofsightmatrix[i][j] == 0 and lineofsightmatrix[i][right]==0 :
+                            temp = [] 
+                            temp.append(str(i)+":"+str(j)+strings[k])
+                            temp.append(str(i)+":"+str(right)+strings[k])
+                            temp.append(1)
+                            list.append(temp)
+                    ########################################################### for W the edges are reversed  
 
                     if k == 3 :
                         
@@ -60,36 +73,39 @@ class GraphShortestPaths:
                             continue
                         else : 
                             left = j + 1 
-                        temp = [] 
-                        temp.append(str(i)+":"+str(j)+strings[k])
-                        temp.append(str(i)+":"+str(left)+strings[k])
-                        temp.append(1)
-                        list.append(temp) 
+                        if lineofsightmatrix[i][j] == 0 and lineofsightmatrix[i][left]==0 :
+                            temp = [] 
+                            temp.append(str(i)+":"+str(j)+strings[k])
+                            temp.append(str(i)+":"+str(left)+strings[k])
+                            temp.append(1)
+                            list.append(temp) 
 
-                    ################## for y 
+                    ################## for N
                     if k == 0 :
                         if i == GRID_SIZE -1 :
                             continue
                         else : 
                             up = i + 1 
-                        temp = [] 
-                        temp.append(str(i)+":"+str(j)+strings[k])
-                        temp.append(str(up)+":"+str(j)+strings[k])
-                        temp.append(1)
-                        list.append(temp) 
-
+                        if lineofsightmatrix[i][j] == 0 and lineofsightmatrix[up][j]==0 :
+                            temp = [] 
+                            temp.append(str(i)+":"+str(j)+strings[k])
+                            temp.append(str(up)+":"+str(j)+strings[k])
+                            temp.append(1)
+                            list.append(temp) 
+                    ################## for S 
                     if k == 2 :
                         if i == 0:
                             continue
                         else: 
                             down = i - 1 
-                        temp = [] 
-                        temp.append(str(i)+":"+str(j)+strings[k])
-                        temp.append(str(down)+":"+str(j)+strings[k])
-                        temp.append(1)
-                        list.append(temp)
-                    #print list
-        
+                        if lineofsightmatrix[i][j] == 0 and lineofsightmatrix[down][j]==0 :
+                            temp = [] 
+                            temp.append(str(i)+":"+str(j)+strings[k])
+                            temp.append(str(down)+":"+str(j)+strings[k])
+                            temp.append(1)
+                            list.append(temp)
+        #print list
+        print "Arithmos akmwn: " + str(len(list)) 
         edges = list 
         # let's check that the data is right
         wrong_edges = [i for i in edges if len(i) not in [2, 3]]
@@ -184,37 +200,9 @@ class GraphShortestPaths:
 
     def shortest_paths(self,DESTINATION):
         source , paths , total_costs=(self.dijkstra(DESTINATION))
-		
 	return_path = []
 	return_source=[]
 	return_cost = []
-	
-        for path in paths :
-	    temp = []
-	    for x in path :
-		#print x
-		cell_id =  x.rsplit(':',1)[0]
-		ori = x.rsplit(':',1)[1]
-                #if ori == "W":
-                #    ori = "E"
-                #elif ori == "E":
-                #    ori = "W"
-                #elif ori == "N":
-                #    ori = "S"
-                #elif ori == "S":
-                #    ori = "N"
-		temp.append(cell_id+":"+ori)
-		if path.index(x) == 0 :
-                    return_source.append(cell_id+":"+ori)
-	            return_cost.append(total_costs[paths.index(path)])
-	    if temp : 
-		return_path.append(temp)
-
-
-	return_source.insert(0,DESTINATION)
-	return_path.insert(0,DESTINATION)
-        return_cost.insert(0,0)
-#	return  return_source , return_path, return_cost
 	return  source , paths, total_costs
 
 

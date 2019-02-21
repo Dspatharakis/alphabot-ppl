@@ -8,10 +8,10 @@ def main():
     #files  = {"file": open("./images/candidate1450.jpg", "rb")}
     #r = requests.post(post_url, files=files )# , data=json)
     payload = [ {
-            "i": 3 ,
-            "j": 0 ,
-            "x": 1 , 
-            "y": 139 , 
+            "i": 2 ,# 6 
+            "j": 2 , # 7 
+            "x": 51 , # 150
+            "y": 52 , # 175
             "or": 170
             }]
     
