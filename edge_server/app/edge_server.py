@@ -3,6 +3,7 @@ import os
 import json
 import ast
 import math
+import time
 from sympy import Poly, Symbol
 from sympy.solvers.inequalities import reduce_rational_inequalities
 from flask import Flask
@@ -19,20 +20,25 @@ from models import Path, db
 
 d = Dna()
 #####
-GRID_SIZE = 10 #5 #10
-CELL_SIZE = 25 #50#25
-DISTANCE_TO_NEIGHBOURS = CELL_SIZE * 2 
-DESTINATION = ("6:7:W")  # 2:3:W, 6:7:W
-obstacles=[[[0,0],[50,0],[75,50],[75,0]],[[55,78],[55,67],[80,67],[80,78]],[[90,67],[90,78],[120,78],[120,67]]]
+GRID_SIZE = 50 #5 #10
+CELL_SIZE = 5 #50#25
+DISTANCE_TO_NEIGHBOURS = 10 
+DESTINATION = ("48:49:W")  # 2:3:W, 6:7:W
+obstacles=[[[0,90],[99,110]],[[176,0],[249,99]],[[290,567],[420,678]],[[790,67],[920,150]],[[600,607],[780,780]],[[760,67],[870,150]],[[560,900],[660,990]],[[1600,1607],[1780,1780]],[[1760,1907],[1870,1500]],[[2060,200],[2160,2390]]]
 
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 
 
-def feed_db() : 
-    graph = GraphShortestPaths(GRID_SIZE)
+def feed_db() :
+    start_time = time.time()
+    graph = GraphShortestPaths(GRID_SIZE,DESTINATION)
+    graph_time = time.time()
+    print "Xronos gia to Graph: "+str(graph_time - start_time)
     source,path,cost = graph.shortest_paths(DESTINATION)
+    dijkstra_time = time.time()
+    print "Xronos gia to Dijkstra: "+str(dijkstra_time - graph_time)
     #print dest, a , b
     for i in range (len(source)):
         #print source[i]
@@ -47,7 +53,9 @@ def feed_db() :
         u = Path(source = str(source[i]), path = str(temp_path), cost=str(cost[i]))
         db.session.add(u)
         db.session.commit()
-
+        db_time = time.time()
+    print "Xronos gia th Bash: "+str(db_time - dijkstra_time)
+    
 
 @app.route('/', methods = ['GET', 'POST'])
 def post_image():
@@ -96,7 +104,7 @@ def path_planning():
         temp =Path.query.filter(Path.source.startswith(str(candidate_path[0]))).all()
         #print candidate_path
         for temp in temp :
-            #print temp.source
+            print temp.source
             if temp.source == DESTINATION:
                 print "Target eliminitated"
                 target_node = temp.source
@@ -106,6 +114,12 @@ def path_planning():
                 return_list = []
                 return_list.append(a)
                 return_list.append(b)
+                ##
+                cost = temp.cost + cost_to_node[path_to_node.index(candidate_path)]
+                cost_for_move = cost_to_node[path_to_node.index(candidate_path)]
+                return_list.append(cost_for_move) 
+                #print cost_for_move
+                ##
                 return jsonify(return_list)
             #print str(temp.cost + cost_to_node[path_to_node.index(candidate_path)]) 
             if temp.cost + cost_to_node[path_to_node.index(candidate_path)] < cost : 
@@ -113,8 +127,9 @@ def path_planning():
                 #return_path.append(ast.literal_eval(temp.path))
                 return_path = temp.path
                 cost = temp.cost + cost_to_node[path_to_node.index(candidate_path)]
+                cost_for_move = cost_to_node[path_to_node.index(candidate_path)]
                 target_node = temp.source
-                #print cost 
+                #print cost
     #print return_path
     #print target_node
     if target_node.rsplit(":",1)[0] == str(iref)+str(":")+str(jref):
@@ -122,7 +137,7 @@ def path_planning():
         #for i in range (len(return_path[0])) :
         while True:  
             target_node = return_path
-            print target_node
+            #print target_node
             if target_node.rsplit(":",1)[0] != (str(iref)+str(":")+str(jref)):
                 break 
             temp = Path.query.filter(Path.source.startswith(str(return_path))).all()
@@ -136,58 +151,60 @@ def path_planning():
     return_list = []
     return_list.append(a)
     return_list.append(b)
+    ##
+    return_list.append(cost_for_move) 
+    print cost_for_move
     return jsonify(return_list)
 
 
 def reconstruct(x,y,i,j,GRID_SIZE):
     neighbours = [] 
     costs = []
-    print i,j, DISTANCE_TO_NEIGHBOURS
     imax = (i * CELL_SIZE + CELL_SIZE/2 + DISTANCE_TO_NEIGHBOURS)/CELL_SIZE
     imin = (i * CELL_SIZE + CELL_SIZE/2 - DISTANCE_TO_NEIGHBOURS)/CELL_SIZE
     jmax = (j * CELL_SIZE + CELL_SIZE/2 + DISTANCE_TO_NEIGHBOURS)/CELL_SIZE
     jmin = (j * CELL_SIZE + CELL_SIZE/2 - DISTANCE_TO_NEIGHBOURS)/CELL_SIZE
-    ix = i
-    jy = j 
+    iref = i
+    jref = j 
     if imin < 0 : imin = 0
     if jmin < 0 : jmin = 0
     if imax > GRID_SIZE - 1: imax = GRID_SIZE - 1
     if jmax > GRID_SIZE - 1: jmax = GRID_SIZE - 1
-    print imax , imin, jmax , jmin
+    #print imax , imin, jmax , jmin
     for i in range (imin,imax+1):
         for j in range (jmin,jmax+1):
-            print i,j
+            #print i,j
 	    ## if line of sight
 	    candx= j*CELL_SIZE + CELL_SIZE /2 
 	    candy= i*CELL_SIZE + CELL_SIZE/2
-            print (x,candx,y,candy)
+            #print (x,candx,y,candy)
             obstacle = line_of_sight(x,candx,y,candy)  
-            print obstacle
+            #print obstacle
             if obstacle == False:
                 distance = math.sqrt( ((x-((j+1)*CELL_SIZE-CELL_SIZE/2))**2)+((y-((i+1)*CELL_SIZE-CELL_SIZE/2))**2) )
                 #print i,j
-                #print distance
                 #print ("I am connecting with: "+str(i)+str(j))
-                print ("I am connecting from x= "+str(ix)+" y: "+str(jy)+" to x: "+str(i)+" and y: "+str(j))
+                #print ("I am connecting from i= "+str(iref)+" j: "+str(jref)+" to i: "+str(i)+" and j: "+str(j))
+                #print distance/CELL_SIZE
                 temp = []
                 temp.append(str(i)+":"+str(j))
                 costs.append(distance/CELL_SIZE)
                 neighbours.append(temp)
-            else:
-                print ("I tried to connect x= "+str(ix)+" y: "+str(jy)+" with x: "+str(i)+" and y: "+str(j)+" but there is an obstacle")
+            #else:
+                #print ("I tried to connect i= "+str(iref)+" j: "+str(jref)+" with i: "+str(i)+" and j: "+str(j)+" but there is an obstacle")
     return neighbours, costs 
 
 def line_of_sight(xa,xb,ya,yb) :
     lineofsight = False
     for rect in obstacles:
     # box has down left and up right corner of the rectangle
-        box = [rect[1][0],rect[1][1],rect[3][0],rect[3][1]]		
-        xmin = box [0]
-        ymin=box[1]
-        xmax= box[2]
-        ymax = box[3]
+        box = [rect[0][0],rect[0][1],rect[1][0],rect[1][1]]		
+        xmin = box [1]
+        ymin=box[0]
+        xmax= box[3]
+        ymax = box[2]
         l = Symbol('l', real=True)
-        print box 
+        #print box , xa ,xb ,ya ,yb 
         if (xa-xb == 0) :
         # check if obstacle is in the vertical line between the two points
             if xmin<=xa<=xmax :
@@ -199,15 +216,15 @@ def line_of_sight(xa,xb,ya,yb) :
             if ymin<=ya<=ymax :
                 a = reduce_rational_inequalities([[ l <= 1, l >= 0 , l<= (xmax-xb)/(xa-xb) , l >= (xmin-xb)/(xa-xb)]], l)
                 if a != False :
-                    return True
+                    return True 
         else :
             a = reduce_rational_inequalities([[ l <= 1, l >= 0 , l<= (xmax-xb)/(xa-xb) , l >= (xmin-xb)/(xa-xb), l<= (ymax-yb)/(ya-yb), l>= (ymin-yb)/(ya-yb)]], l)
             if a != False :
                 return True
-    print lineofsight
+    #print lineofsight
     return lineofsight
 
 if __name__ == '__main__':
-    db.create_all()
-    feed_db()
+    #db.create_all()
+    #feed_db()
     app.run(host='192.168.1.114', port=8000)

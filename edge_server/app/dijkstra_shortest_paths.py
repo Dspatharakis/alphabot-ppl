@@ -5,7 +5,7 @@ import numpy as np
 # we'll use infinity as a default distance to nodes.
 inf = float('inf')
 Edge = namedtuple('Edge', 'start, end, cost')
-obstacles=[[[0,0],[50,0],[75,50],[75,0]],[[55,78],[55,67],[80,67],[80,78]],[[90,67],[90,78],[120,78],[120,67]]]
+obstacles=[[[0,90],[99,110]],[[176,0],[249,99]]]#,[[90,67],[120,78]]]
 #obstacles = []
 CELL_SIZE = 25
 def make_edge(start, end, cost=1):
@@ -13,17 +13,20 @@ def make_edge(start, end, cost=1):
 
 
 class GraphShortestPaths:
-    def __init__(self, GRID_SIZE):
+    def __init__(self, GRID_SIZE, DESTINATION):
         s = (GRID_SIZE,GRID_SIZE)
         lineofsightmatrix =np.zeros((s),dtype=int)
         for rect in obstacles:
             #print rect
-            for obstacle in rect:
-                obi = obstacle[0]/CELL_SIZE
-                obj = obstacle[1]/CELL_SIZE
-                #print obstacle
-                #print obi,obj
-                lineofsightmatrix[obi][obj]=1
+            minobi = rect[0][1]/CELL_SIZE
+            minobj = rect[0][0]/CELL_SIZE
+            maxobi = rect[1][1]/CELL_SIZE
+            maxobj = rect[1][0]/CELL_SIZE
+            for j in range (minobj,maxobj+1):
+                for i in range (minobi,maxobi+1):
+                    lineofsightmatrix[i][j]=1
+        #r = DESTINATION.rsplit(":",1)[0]
+        #lineofsightmatrix[int(r.rsplit(":",1)[0])][int(r.rsplit(":",1)[1])] = 5
         print lineofsightmatrix
 
         list = [] 
