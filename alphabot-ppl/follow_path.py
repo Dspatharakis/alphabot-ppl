@@ -44,7 +44,7 @@ S1 = str(CONFIG["camera"]["vertical_servo_pin"])
 
 # Rotate AlphaBot according to its new desired orientation
 def change_orientation(mc, co, no):
-    print("Orientation should be: " + str(co-no) + "deg, but is: " + str(co) + "deg.")
+    print("Orientation should be: " + str(co- no) + "deg, but is: " + str(co) + "deg.")
     deg_diff = no 
     # Rotational movements below 10deg are imprecise
     if (math.fabs(deg_diff) > 10):
@@ -55,7 +55,7 @@ def change_orientation(mc, co, no):
         print("----------------------------------------------\n")
     else:
         print("Error too small. Ignoring...")
-        return_orientation = 0 
+        return_orientation = deg_diff 
     return return_orientation
     
 # Move AlphaBot one tile forward
@@ -108,7 +108,7 @@ def detect_orientation(ax, ay, distance, theta_beac, color):
     # elif ((by > ry) and (theta_beac < 0)):
     #     theta_or = theta_beac - a
     theta_or = theta_beac - ((by-ry)/math.fabs(by-ry)) * a
-    print("Orientation Angle: " + str(theta_or) + "deg.")
+    print("Orientation Angle: " + str(-theta_or) + "deg.")
 
     return theta_or
 
@@ -192,7 +192,7 @@ def main():
     sl = SelfLocator(300)
     mc = MicroControler()
     #TODO put offload_dijkstra to config.yaml
-    offload_dijkstra = 1 # 0 is for local execution, 1 for offloading dijkstra
+    offload_dijkstra = 0 # 1 is for local execution, 0 for offloading dijkstra
     # Solve the dp and visualise path
     #if False:
     #    print ""
@@ -207,7 +207,7 @@ def main():
         #x , y , i ,j ,co = 175, 125 , 2 , 3 , 0 
     
     #TODO if to offload or not
-    if offload_dijkstra == 0 :
+    if offload_dijkstra == 1 :
         path = plan_the_path((i,j), DIAGRAM2_G)
     else: 
         post_url =  "http://192.168.1.114:8000/dijkstra"
@@ -227,25 +227,25 @@ def main():
     print("Starting to follow path...")
     cp = path.pop(0) # Get starting position
     np = path.pop(0)
-    while cp != np : # While current tile is different from target's tile:
+    while True : # While current tile is different from target's tile:
         # 1: check if re-calculation of the path is needed
         print ("Thinking that I am in position: (" + str(int(cp[0])) + ", " + str(int(cp[1])) + ")")
         print ("I actually am at: (" + str(int(i)) + ", " + str(int(j)) + "), or (" + 
             str(int(x)) + ", " + str(int(y)) + ") in cm. ")
-        if (((i != cp[0]) or (j != cp[1])) and offload_dijkstra == 0):
+        if (((i != cp[0]) or (j != cp[1])) and offload_dijkstra == 1):
             print "So, I need to plan the path again.\n"
             path = plan_the_path((i,j), DIAGRAM2_G)
             cp = path.pop(0)
             continue
         else:
-            if offload_dijkstra == 0:
+            if offload_dijkstra == 1:
                 print "So, no need for planning the path again.\n"
                 np = path.pop(0)
         
         # 2: check about extra orientation turn
         print "Checking for extra turn (a change in path orientation)..."
         
-        print co 
+        #print co # actual orientation of Robot
         # 3: change the orientation; use the Pythagorean Theorem for calculating the new required distance 
         # and angle to move to the next tile
         a = x - (np[1] * CELL_SIZE + CELL_SIZE / 2)
@@ -263,33 +263,31 @@ def main():
 	a_side = math.sqrt((x1-xtarget)**2 + (y1-ytarget)**2) 
 	b_side = math.sqrt((x-xtarget)**2 + (y-ytarget)**2)
 	c_side = math.sqrt((x-x1)**2 + (y-y1)**2)
-	print x,y , x1,y1, xtarget, ytarget
-	print a_side , b_side , c_side
+	#print x,y , x1,y1, xtarget, ytarget
+	#print a_side , b_side , c_side
 	# Law of cosines a**2 = c**2 + b**2 - 2cbcosw , where w is the angle of A
 	w = math.acos(float(-(a_side**2) + c_side**2 + b_side**2)/(float(2*c_side*b_side))) 
     	# We need also the slope to determine to whick way the Robot must rotate
-        #TODO determine which way the robot rotate
 
-        print w
+        #print w
 	a = numpy.array([x1-x,y1-y])
-        b = numpy.array([xtarget-x,ytarget-x])
-        sign =  numpy.cross(a,b)
-        print sign
+        b = numpy.array([xtarget-x,ytarget-y])
+        sign =  numpy.cross(a,b) # cross product of the two vectors
+        #print a , b
+        #print sign
         no =  w * 180/pi* sign/abs(sign)
-        
-        print "gwnia megali "+str(no)
-        print a , b 
-        print "distance "+str(distance)
+        print "gwnia na stripsw " +str(no)
         
         # TODO: remove. (Temporary, just to visually check the soundness of the results)
-        raw_input("Press Enter to continue...\n")
+        #raw_input("Press Enter to continue...\n")
         temp_ori = change_orientation(mc, int(co), int(no))
         # 4: move a tile forward and at the same time measure the distance and angle reported by the light 
         # sensors (encoders) during the last step. Use this information to get an estimation on the grid
         
+        #raw_input("Press Enter to continue...\n")
         # position if beacon information is not sufficient.
         x_enc, y_enc, theta_enc = move_forward(mc, distance)
-        raw_input("Press Enter to continue...\n")
+        #raw_input("Press Enter to continue...\n")
         # 5: acquire estimated position on the grid
         # TODO : Delete this if its only for experimentation
         #if False:
@@ -297,7 +295,7 @@ def main():
         try:
             x, y, i, j, co = self_localize(sl)
             co=-co
-        except InsufficientLocalizationInfoError, ValueError:
+        except (InsufficientLocalizationInfoError, ValueError):
         #else:
             # At this stage, the (blind) AlphaBot has no environmental information regarding its position.
             # It now relys solely on the information coming from the encoders. 
@@ -306,15 +304,13 @@ def main():
                     str(int(j)) + ", x = " + str(int(x)) + "cm , y = " + str(int(y)) + 
                     "cm and Orientation = " + str(int(co)) + "deg")
             # rotation of axis so we need to compute the real x,y diff
-            theta = math.radians(temp_ori)
+            co += (temp_ori + theta_enc)
+            theta = math.radians(co)
             print theta
             print x_enc,y_enc,theta_enc
-
             print  str(int(x)) , str(int(x_enc)*math.cos(theta)) , str(int(y_enc)*math.sin(theta) )
             x = int(x) + int(x_enc)*math.cos(theta) - int(y_enc)*math.sin(theta) 
             y = int(y) + int(x_enc)*math.sin(theta) + int(y_enc)*math.cos(theta)
-
-            co += (temp_ori + theta_enc)
             i = y // CELL_SIZE
             j = x // CELL_SIZE
             print("Current encoder-based position estimation: Row = "+ str(int(i)) + ", Column = " + 
@@ -322,7 +318,7 @@ def main():
                     "cm and orientation = " + str(int(co)) + "deg")
         # Current position in grid is last step's next position
         
-        if offload_dijkstra !=0 :
+        if offload_dijkstra !=1 :
                 
             post_url =  "http://192.168.1.114:8000/dijkstra"
             payload = [{ "i" : int(i) , "j": int(j), "x" : x, "y":y, "or": co}]
@@ -333,12 +329,17 @@ def main():
             start_position = [int(y/CELL_SIZE), int (x/CELL_SIZE) ]
             path.append(start_position)
             path.append(temp)
-
+            
+            if start_position == temp:
+                break
             print path
             cp = path.pop(0)
             np = path.pop(0)
         else : # local execution of dijkstra
-            cp = np 
+            cp = np
+            if cp==np :
+                break
+        
 
         #cp = np
         print("\n---------------------------------")

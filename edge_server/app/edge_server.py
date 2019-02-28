@@ -225,6 +225,6 @@ def line_of_sight(xa,xb,ya,yb) :
     return lineofsight
 
 if __name__ == '__main__':
-    #db.create_all()
-    #feed_db()
+    db.create_all()
+    feed_db()
     app.run(host='192.168.1.114', port=8000)
