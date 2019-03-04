@@ -1,13 +1,15 @@
 from collections import deque, namedtuple
 import time
 import numpy as np 
+import yaml
 
+CONFIG = yaml.load(open("./config.yaml"))
 # we'll use infinity as a default distance to nodes.
 inf = float('inf')
 Edge = namedtuple('Edge', 'start, end, cost')
-obstacles=[[[0,90],[99,110]],[[176,0],[249,99]]]#,[[90,67],[120,78]]]
-#obstacles = []
-CELL_SIZE = 25
+CELL_SIZE = CONFIG["grid"]["cell_size"]
+obstacles = CONFIG["grid"]["obstacles"]
+
 def make_edge(start, end, cost=1):
   return Edge(start, end, cost)
 

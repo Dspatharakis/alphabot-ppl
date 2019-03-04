@@ -44,7 +44,11 @@ camera:
   vertical_servo_pin: 27
 
 grid:
+  grid_size: 10 
   cell_size: 50
+  distance_to_neighbours: 70 
+  destination: "2:3:W"
+  obstacles : [[[0,90],[99,110]],[[176,0],[249,99]]] 
   columns: 5
   rows: 5
   goal: !!python/tuple [2, 3]

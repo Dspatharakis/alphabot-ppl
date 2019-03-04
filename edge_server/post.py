@@ -4,10 +4,11 @@ import json
 import time
 import sys
 from Astar import *
+from astar8 import * 
 
-GRID_SIZE = 50
-CELL_SIZE = 5
-goal = (48,49)
+GRID_SIZE = 50 #10#50
+CELL_SIZE = 5 #25 #5
+goal = (48,49)#(48,49)
 def main():
     a = [0,0]
     start = (a[0],a[1])
@@ -28,8 +29,8 @@ def main():
     while True: 
         i = int(a[0])
         j = int(a[1])
-        x = j * CELL_SIZE
-        y = i * CELL_SIZE
+        x = j * CELL_SIZE + CELL_SIZE/2 
+        y = i * CELL_SIZE + CELL_SIZE/2 
         payload = [ {
                 "i": int(i) ,# 6 
                 "j": int(j) , # 7 
@@ -56,8 +57,9 @@ def main():
             print "average time for each step of improved dijkstra : "+str(step_timer/step_counter)
             print "cost improved dijkstra : "+str(cost) 
             print "cost astar : "+str(len(path))
-            print "path improved dijkstra" +str(path)
-            print "path astar"+ str(path2)
+            print "path improved dijkstra" +str(path2)
+            print "path astar"+ str(path)
+            print Astar8(GRID_SIZE,start,goal)
             break
 
     #a = json.loads(r.text)

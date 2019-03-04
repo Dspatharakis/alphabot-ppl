@@ -32,7 +32,7 @@ class Dna(object):
 	curr_width = 0	
 	# loop over the boundaries, find the most fitting color 
 	for boundaries in COLOR_BOUNDARIES:
-		print("")
+		'''print("")
     		if (color == 0):
         		print("Looking for the Red Beacon...")
     		elif (color == 1):
@@ -43,7 +43,8 @@ class Dna(object):
         		print("Looking for the Yellow Beacon...")
     		else:
         		print("Looking for the Orange Beacon...")		
-    		for (lower, upper) in boundaries:
+    		'''
+                for (lower, upper) in boundaries:
 			# create NumPy arrays from the boundaries
         		lower = np.array(lower, dtype = "uint8")
         		upper = np.array(upper, dtype = "uint8") 
@@ -69,8 +70,8 @@ class Dna(object):
             			else:
                 			# Cannot be sitting on their side
                 			raise BeaconNotValidError
-            			print("Candidate contour width, height and angle:")
-            			print round(width), round(height), round(angle, 2)
+            			#print("Candidate contour width, height and angle:")
+            			#print round(width), round(height), round(angle, 2)
             
             			# Check if feasible beacon marker
                                 # 0: (WEAK) width must be greater than 100 pixels
@@ -84,7 +85,7 @@ class Dna(object):
                 			raise BeaconNotValidError
 			
                         except (BeaconNotValidError, ValueError):
-				print('Not found!')
+				#print('Not found!')
                                 width = 0
             			continue	
 		if (width > curr_width):
@@ -96,7 +97,7 @@ class Dna(object):
     		color += 1
 
 	if (curr_width == 0):
-    	    print "\nNo Beacon detected!"
+    	    #print "\nNo Beacon detected!"
             raise BeaconNotFoundError
     	    exit()
 
@@ -150,7 +151,7 @@ class Dna(object):
 
     # Calculate distance and agle between the Alphabot and the detected Beacon
     def find_distance_and_angle(self, imagePath):   
-        print("Checking image: " + imagePath)
+        #print("Checking image: " + imagePath)
         # load the image, find the marker in the image, then compute the
         # distance to the marker from the camera
         image = cv2.imread(imagePath)
