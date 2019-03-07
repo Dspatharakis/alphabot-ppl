@@ -9,9 +9,9 @@ M = MicroControler()
 # - sth gwnia shmainei stripse deksia
 # + sth gwnia shmainei stripse aristera
 
-a=[0,0,0,0,0,-80]
+a=[0,0,0,0,0,-90]
 
-#a=[0,0,0,-0.2,0,0]
+#a=[0,0,0,0.4,0,0]
 
 M.move_and_control(a)
 #a=[0,0,0,0,0,-1.65]

@@ -58,7 +58,7 @@ class MicroControler(object) :
                     dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
                 elif rotational ==0:
                     dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
-                w = (fref-fo)/(dt) # xronos misos diplasio w
+                w = L*(fref-fo)/(dt*2*R) # xronos misos diplasio w
                 right_voltage = (w - B)/A
                 left_voltage =  (w - D)/C
                  
@@ -118,7 +118,7 @@ class MicroControler(object) :
                 Ab.stop()
                 #print ("STOPPPPPPPPPPPPPPPPPPPP")
                 break
-            #print ("To dt einai auth th fora : ")+str(dt)
+            print ("To dt einai auth th fora : ")+str(dt)
             #print ("To w einai : ")+str(w)
             print ("right voltage :" + str(right_voltage) , "left_voltage "+ str(left_voltage))
             #print ("apostasi apo stoxo se cm: "+str(fabs(xref-xo)) )

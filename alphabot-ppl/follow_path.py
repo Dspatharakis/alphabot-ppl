@@ -6,6 +6,7 @@ from micro_controller import *
 import yaml
 import math
 import json
+import time
 import signal
 import sys
 import requests
@@ -35,10 +36,12 @@ BEACON_ROWS = CONFIG["grid"]["beacons_rows"]
 CELL_SIZE = CONFIG["grid"]["cell_size"]
 
 DIAGRAM2 = GridWithWeights(GRID_COLUMNS, GRID_ROWS)
+#TODO put walls at config file
+DIAGRAM2.walls = [(1, 0), (1, 1), (2, 0), (2, 1), (0, 3), (0, 4),(1,3),(1,4)]
 DIAGRAM2_S = CONFIG["grid"]["start"] # Start
 DIAGRAM2_G = CONFIG["grid"]["goal"] # Goal
 ORIENT_REF_ROW = CONFIG["grid"]["orientation_reference_row"] # Red Beacon
-
+offload_dijkstra = CONFIG["offload_path_planning"]
 S1 = str(CONFIG["camera"]["vertical_servo_pin"])
 
 
@@ -70,7 +73,10 @@ def move_forward(mc, distance):
 # Return estimated AlphaBot's position in grid (column, row, orientation)
 def self_localize(self_locator):
     print("Self Localising...")
+    start_time = time.time()
     b_distance, b_angle, b_color = self_locator.dna_from_beacons()
+    end_time = time.time() -start_time
+    print "Computational time "+str(end_time)
     x, y, column, row = detect_position_in_grid(b_distance, b_color)
     # angle from the first beacon is enough
     orientation = detect_orientation(x, y, b_distance[0], b_angle[0], b_color[0]) 
@@ -191,42 +197,32 @@ def main():
     print("Initiating...\n")
     sl = SelfLocator(300)
     mc = MicroControler()
-    #TODO put offload_dijkstra to config.yaml
-    offload_dijkstra = 0 # 1 is for local execution, 0 for offloading dijkstra
-    # Solve the dp and visualise path
-    #if False:
-    #    print ""
     try:
         x, y, i, j, co = self_localize(sl)
     except InsufficientLocalizationInfoError:
         print("I have no information regarding where I am. Quiting...\n")
         quit()
-        #TODO DELETE , just for experimentation
-    #else : 
-        #x , y , i ,j ,co = 25, 76 , 1 , 0 , 0 
-        #x , y , i ,j ,co = 175, 125 , 2 , 3 , 0 
-    
-    #TODO if to offload or not
     if offload_dijkstra == 1 :
         path = plan_the_path((i,j), DIAGRAM2_G)
-    else: 
+    else:
+        start_time = time.time()
         post_url =  "http://192.168.1.114:8000/dijkstra"
         payload = [{ "i" : int(i) , "j": int(j), "x" : x, "y":y, "or": co}]
         co = -co
         r = requests.post(post_url,json=payload)
         a,b = json.loads(r.text)
-        print a,b
         temp = [int(a),int(b)]
         path = []
         start_position = [int(y/CELL_SIZE), int (x/CELL_SIZE) ]
         path.append(start_position)
         path.append(temp)
+        print "Total time for dijkstra: "+ str(time.time()-start_time)
 
-    print path
     # Start following path
     print("Starting to follow path...")
     cp = path.pop(0) # Get starting position
-    np = path.pop(0)
+    if offload_dijkstra == 0:
+        np = path.pop(0)
     while True : # While current tile is different from target's tile:
         # 1: check if re-calculation of the path is needed
         print ("Thinking that I am in position: (" + str(int(cp[0])) + ", " + str(int(cp[1])) + ")")
@@ -245,13 +241,11 @@ def main():
         # 2: check about extra orientation turn
         print "Checking for extra turn (a change in path orientation)..."
         
-        #print co # actual orientation of Robot
         # 3: change the orientation; use the Pythagorean Theorem for calculating the new required distance 
         # and angle to move to the next tile
         a = x - (np[1] * CELL_SIZE + CELL_SIZE / 2)
         b = y - (np[0] * CELL_SIZE + CELL_SIZE / 2)
         distance = math.sqrt(a ** 2 + b ** 2) / 100 # distance is needed in m.
-
         # Find new Point in the line of current orientation.
 	x1 = x + 10*cos(co*pi/180) 
 	y1 = y + 10*sin(co*pi/180)
@@ -263,40 +257,26 @@ def main():
 	a_side = math.sqrt((x1-xtarget)**2 + (y1-ytarget)**2) 
 	b_side = math.sqrt((x-xtarget)**2 + (y-ytarget)**2)
 	c_side = math.sqrt((x-x1)**2 + (y-y1)**2)
-	#print x,y , x1,y1, xtarget, ytarget
-	#print a_side , b_side , c_side
 	# Law of cosines a**2 = c**2 + b**2 - 2cbcosw , where w is the angle of A
 	w = math.acos(float(-(a_side**2) + c_side**2 + b_side**2)/(float(2*c_side*b_side))) 
     	# We need also the slope to determine to whick way the Robot must rotate
-
-        #print w
 	a = numpy.array([x1-x,y1-y])
         b = numpy.array([xtarget-x,ytarget-y])
         sign =  numpy.cross(a,b) # cross product of the two vectors
-        #print a , b
-        #print sign
         no =  w * 180/pi* sign/abs(sign)
-        print "gwnia na stripsw " +str(no)
         
-        # TODO: remove. (Temporary, just to visually check the soundness of the results)
         #raw_input("Press Enter to continue...\n")
         temp_ori = change_orientation(mc, int(co), int(no))
         # 4: move a tile forward and at the same time measure the distance and angle reported by the light 
         # sensors (encoders) during the last step. Use this information to get an estimation on the grid
-        
         #raw_input("Press Enter to continue...\n")
-        # position if beacon information is not sufficient.
         x_enc, y_enc, theta_enc = move_forward(mc, distance)
         #raw_input("Press Enter to continue...\n")
         # 5: acquire estimated position on the grid
-        # TODO : Delete this if its only for experimentation
-        #if False:
-        #    print "" 
         try:
             x, y, i, j, co = self_localize(sl)
             co=-co
         except (InsufficientLocalizationInfoError, ValueError):
-        #else:
             # At this stage, the (blind) AlphaBot has no environmental information regarding its position.
             # It now relys solely on the information coming from the encoders. 
             print("Beacon information not sufficient for localizing. Now using encoders' output...")
@@ -316,10 +296,9 @@ def main():
             print("Current encoder-based position estimation: Row = "+ str(int(i)) + ", Column = " + 
                     str(int(j)) + ", x = " + str(int(x)) + "cm , y = " + str(int(y)) + 
                     "cm and orientation = " + str(int(co)) + "deg")
-        # Current position in grid is last step's next position
-        
+            # Current position in grid is last step's next position
         if offload_dijkstra !=1 :
-                
+            start_time = time.time()    
             post_url =  "http://192.168.1.114:8000/dijkstra"
             payload = [{ "i" : int(i) , "j": int(j), "x" : x, "y":y, "or": co}]
             r = requests.post(post_url,json=payload)
@@ -329,23 +308,22 @@ def main():
             start_position = [int(y/CELL_SIZE), int (x/CELL_SIZE) ]
             path.append(start_position)
             path.append(temp)
-            
+            print "Total time for dijkstra: "+ str(time.time()-start_time)
             if start_position == temp:
                 break
             print path
             cp = path.pop(0)
             np = path.pop(0)
+
         else : # local execution of dijkstra
             cp = np
             if cp==np :
                 break
         
 
-        #cp = np
         print("\n---------------------------------")
         print("End of Step")
         print("---------------------------------\n")
-    # TODO: Check here if I am really at the target, otherwise rerun
     print("\n\n\n ---------------------- GOAL REACHED (or at least I think so) ----------------------\n\n\n ")
 
 if __name__ == "__main__":

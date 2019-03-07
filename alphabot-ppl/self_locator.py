@@ -10,6 +10,7 @@ import alphabot_exceptions
 import yaml
 import requests 
 import json 
+import time 
 
 CONFIG =yaml.load(open("../config.yaml"))
 S1 = str(CONFIG["camera"]["vertical_servo_pin"])
@@ -59,15 +60,20 @@ class SelfLocator():
                 self.camera.capture(candidate)
                 candidate.close()
                 try:
+                    start_time = time.time()
                     # Using either the edge server to perform the image processing or do it locally
-                    if OFFLOAD:  
-                        files = {"file": open('./images/candidate' + str(pulse_width) + ".jpg", "rb")}
+                    if OFFLOAD:
+                        payload = { "time" : time.time()}
+                        files = [("time", ("datas", json.dumps(payload), "application/json")), 
+                                ("file", ("temp", open('./images/candidate' + str(pulse_width) + ".jpg", "rb"),'application/octet-stream'))]
                         r = requests.post(POST_URL, files=files)
                         if (r.status_code == 404): 
                             raise BeaconNotFoundError
                         d, a, c = json.loads(r.text)
-                    else : 
+                    else :
                         d, a, c = Dna().find_distance_and_angle('images/candidate'+str(pulse_width)+'.jpg')
+                        end_time = time.time()-start_time
+                        #print "Total time for Image recognition: " +str(end_time)
 
                     # Check for already-found color
                     if c not in color:
@@ -80,6 +86,9 @@ class SelfLocator():
                         print("Beacon already found, not updating")
                     print("-------------------------------\n")
                 except BeaconNotFoundError:
+                    end_time = time.time()
+                    end_time = end_time - start_time
+                    #print "Total time for Image recognition: " +str(end_time)
                     continue
                 if (beacons_found == 2):
                     print("-------------------------------")
