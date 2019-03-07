@@ -43,9 +43,9 @@ def main():
         r = requests.post(post_url, json=payload )# , data=json)
         step_timer += time.time() - c
         a = json.loads(r.text)
-        #print (a[0])
-        #print (a[1])
-        #print (a[2])
+        print (a[0])
+        print (a[1])
+        print (a[2])
         cost += a[2]
         temp = [int(a[0]),int(a[1])]
         path2.append(temp)

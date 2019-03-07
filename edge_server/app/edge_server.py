@@ -20,7 +20,6 @@ from dijkstra_shortest_paths import *
 CONFIG = yaml.load(open("./config.yaml"))
 
 d = Dna()
-
 GRID_SIZE = CONFIG["grid"]["grid_size"]
 CELL_SIZE = CONFIG["grid"]["cell_size"]
 DISTANCE_TO_NEIGHBOURS = CONFIG["grid"]["distance_to_neighbours"]
@@ -241,4 +240,5 @@ def line_of_sight(xa,xb,ya,yb) :
 
 if __name__ == '__main__':
     feed_db()
-    app.run(host='192.168.1.114', port=8000)
+    #app.run(host='192.168.1.114', port=8000)
+    app.run(host='0.0.0.0', port=8000)
