@@ -6,8 +6,9 @@ import sys
 
 CELL_SIZE = 50 
 def main():
-    a=[3,0]
-    post_url = "http://192.168.1.114:8000/dijkstra"
+    a=[0,2]
+
+    post_url = "http://0.0.0.0:8000/dijkstra"
     i = int(a[0])
     j = int(a[1])
     x = j * CELL_SIZE + CELL_SIZE/2 
@@ -17,6 +18,7 @@ def main():
             "j": int(j) , # 7 
             "x": int(x) , # 150
             "y": int(y) , # 175
+            "dest": 1 ,
             "or": 170
             }]
     r = requests.post(post_url, json=payload )# , data=json)

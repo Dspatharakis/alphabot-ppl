@@ -27,7 +27,7 @@ MarkupSafe==1.1.0
 matplotlib==2.2.3
 mpmath==1.1.0
 numpy==1.15.4
-opencv-python==3.4.5.20
+opencv-python==3.3.0.10
 Pillow==5.4.1
 psutil==5.0.1
 pyasn1==0.1.9

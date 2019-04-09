@@ -2,6 +2,8 @@ from imutils import paths
 import numpy as np
 import imutils
 import cv2
+
+cv2.ocl.setUseOpenCL(False);
 import math
 from alphabot_exceptions import *
 import yaml
@@ -97,7 +99,7 @@ class Dna(object):
     		color += 1
 
 	if (curr_width == 0):
-    	    #print "\nNo Beacon detected!"
+    	    print "\nNo Beacon detected!"
             raise BeaconNotFoundError
     	    exit()
 

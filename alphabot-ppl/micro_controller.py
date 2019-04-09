@@ -15,18 +15,20 @@ vmax = 100
 vmin= 30
 
 #for wr the equation for voltage is v = (wr - B)/ A
-A = 0.16136027
-B = -1.2869597
+A = 0.154085#0.16136027
+B = 6.8064#-1.2869597
 #for wl the equation for voltage is v = (wl - D)/ C
-C = 0.16225248
-D = -0.3943191
+C = 0.166486#0.16225248
+D = 5.55511#-0.3943191
 
+F = 7.092
+G = 318.5
 
 class MicroControler(object) :
 
     def move_and_control(self, a):
         start_time = time.time()
-        T = 0.5  
+        T = 0.3 
         reference_position = a
         xo = a[0]
         yo = a[1]
@@ -38,11 +40,13 @@ class MicroControler(object) :
         rotational = 0 
         e = 0.2
         vmax = 100
-        vmin= 45
+        vmin= 20
 
         if fref!=fo:
             rotational = 1
-            T = ((fabs(fref)+6.2687)/134.7328)
+            #TODO uncomment
+            #T = ((fabs(fref)+6.2687)/134.7328)
+            T = ((fabs(fref)+F)/G)
 
         fref = fref*pi / 180
         counter = 2
@@ -55,63 +59,59 @@ class MicroControler(object) :
             # prwta peristrofikh meta metaforikh
             if fabs(fabs(fref)-fabs(fo))>= e  :
                 if rotational == 1 and moves > 1:
-                    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
+                    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+F)/G)
                 elif rotational ==0:
-                    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
+                    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+F)/G)
+                #    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
                 w = L*(fref-fo)/(dt*2*R) # xronos misos diplasio w
-                right_voltage = (w - B)/A
+                a = fabs(w) / w
+		w = 12 
+		right_voltage = (w - B)/A
                 left_voltage =  (w - D)/C
-                 
+		w = w* a
+		
                 #print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
-                if (-vmin < right_voltage < 0) : right_voltage = - vmin  
-                if (right_voltage < - vmax) : right_voltage = - vmax
-                if (0 <= right_voltage <  vmin) : right_voltage = vmin 
-                if (right_voltage > vmax) : right_voltage = vmax
-                if (-vmin < left_voltage < 0) : left_voltage = - vmin
-                if (left_voltage < - vmax) : left_voltage = - vmax
-                if (0 <= left_voltage <  vmin) : left_voltage = vmin
-                if (left_voltage > vmax) : left_voltage = vmax
-                
                 if w < 0:  #prepei na stripsw pros ta deksia ( + , + )
                     orientation = 2
-                    right_voltage= -right_voltage
-                    left_voltage= -left_voltage
+                    right_voltage= right_voltage
+                    left_voltage= left_voltage
                 else: # prepei na stripsw pros ta aristera ( - , - )
                     orientation = 3
                     right_voltage= -right_voltage
                     left_voltage= -left_voltage
-               # print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
+                print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
+            
             elif (fabs(fabs(xref)-fabs(xo))>= 0.05 and (rotational!= 1)):
 
-                #if moves > 2 :
-                #dt= 1.87474*fabs(fabs(xref)-fabs(xo)) -0.0108362
                 #print ("metaforiki kinhsh")
 
                 w = (xref-xo)/(R*dt)
                 while True:
-                    if 0 <=w< 5.5 : 
-                        dt = float(dt)/float(1.01)
-                        w = (xref-xo)/(R*dt)
-                    elif w >14.8 : 
-                        dt = dt * 1.01
-                        w = (xref-xo)/(R*dt)
-                    elif 0>w>-4.5 : 
-                        dt = dt / float(1.01)
-                        w = (xref-xo)/(R*dt)
-                    elif w < - 14.8 :
-                        dt = dt * 1.01
-                        w = (xref-xo)/(R*dt)
+                    if 0 <=w< 12 : 
+                        #dt = float(dt)/float(1.01)
+                        w = 12 # (xref-xo)/(R*dt)
+                    elif w >14: #21.5 : 
+                        #dt = dt * 1.01
+                        w = 14 #21.5 # (xref-xo)/(R*dt)
+                    elif 0>w>-12 : 
+                        #dt = dt / float(1.01)
+                        w = -12 #(xref-xo)/(R*dt)
+                    elif w < - 14 :
+                        #dt = dt * 1.01
+                        w = -14 #(xref-xo)/(R*dt)
                     else: break 
+                print w 
+                right_voltage = (abs(w) - B)/A
+                left_voltage =  (abs(w) - D)/C
+                
 
-                right_voltage = (w - B)/A
-                left_voltage =  (w - D)/C
                 if w >= 0:
                     orientation = 0
                     right_voltage = -right_voltage # an w > 0 tote prepei na paw eutheia ara ( - , + )
                     left_voltage = +left_voltage
                 if w < 0:         # an w < 0 tote prepei na paw opisthen ara ( + , - )            
-                    right_voltage = -right_voltage 
-                    left_voltage =  left_voltage
+                    right_voltage = right_voltage 
+                    left_voltage =  -left_voltage
                     orientation = 1 
             
             else : 
@@ -145,6 +145,7 @@ class MicroControler(object) :
             try:
                 wr = return_dict[0]
                 dtr = return_dict[2]
+                #TODO
                 if wr > A*vmax+B :
                     print "measured maximum wr "
                     wr = A * vmax +B
@@ -152,11 +153,12 @@ class MicroControler(object) :
                 #print ("error1")
                 wr = pi /(10 * T)  
                 #wr = 0 
-                dtr = dt
+                #dtr = dt
                 counter = counter -1 
             try:
                 wl = return_dict[1]
                 dtl = return_dict[3]
+                #TODO
                 if wl > C*vmax+D :
                     print "measured maximum wl "
                     wl = C * vmax +D
@@ -167,7 +169,8 @@ class MicroControler(object) :
                 counter = counter -1 
                 dtl = dt
             if counter == 2 :
-                dt = (dtl+dtr)/counter
+                #dt = (dtl+dtr)/counter
+                print "ok"
             elif counter==0 and rotational==1:
                 print ("two errors when reading from light sensors")
                 #wr = (fref-fo)*L/(2*R*dt) # xronos misos diplasio w
@@ -195,8 +198,11 @@ class MicroControler(object) :
             if orientation == 1 :
                 wr= -wr
                 wl= -wl
-
-            fo = fo + dt * R*(wr-wl)/L
+	    if (dt * R*(wr-wl)/L)> 0.7:
+		c = 0.78
+	    else:
+                c = 1 
+            fo = fo + (dt * R*(wr-wl)/L)/c
             print ("Measured  wr: "+str(round(wr,2))+" rad/s" , "  wl: "+str(round(wl,2))+" rad/s", " dt of mesaurement: "+ str(round(dt,2)) +" ms",  " Angle from initial orientation of this step, f0: "+ str(round((fabs(fref*180/pi)-fabs((fo*180/pi))),2))+" degrees")
             
             #if fo > 2*pi : 
@@ -209,12 +215,13 @@ class MicroControler(object) :
             
                 #print ("phgainw opisthen")
             if orientation ==0  or orientation==1:
-                xo = xo + dt*cos(fo)*R*(wr+wl)/2 
+                xo = xo + (dt*cos(fo)*R*(wr+wl)/2)/0.7 
                 yo = yo + dt*sin(fo)*R*(wr+wl)/2 
             print ("Measured values from light sensors:  xo: "+str(round(xo*100,2))+" cm", " yo: "+str(round(yo*100,2)) +" cm",  " fo: "+str(round((fo*180/pi),2))+" degrees")
 
             Ab.stop()
-            time.sleep(0.5)
+            #TODO edw thelei 0.5 sleep
+            time.sleep(1.5)
         
         Ab.stop()
         xo = round(xo*100,2)

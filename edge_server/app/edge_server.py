@@ -6,6 +6,7 @@ import math
 import time
 import sqlite3
 import yaml
+
 from sympy import Poly, Symbol
 from sympy.solvers.inequalities import reduce_rational_inequalities
 from flask import Flask
@@ -25,33 +26,80 @@ CELL_SIZE = CONFIG["grid"]["cell_size"]
 DISTANCE_TO_NEIGHBOURS = CONFIG["grid"]["distance_to_neighbours"]
 DESTINATION = CONFIG["grid"]["destination"]
 obstacles = CONFIG["grid"]["obstacles"]
+Q = CONFIG["kalman"]["Q"]
+R = CONFIG["kalman"]["R"]
+P0 = CONFIG["kalman"]["P0"]
+X0 = CONFIG["kalman"]["X0"]
 
 app = Flask(__name__)
 conn = sqlite3.connect(':memory:', check_same_thread=False)
 c = conn.cursor()
 
 def feed_db() :
-    start_time = time.time()
-    graph = GraphShortestPaths(GRID_SIZE,DESTINATION)
-    graph_time = time.time()
-    print "Time for  Graph: "+str(graph_time - start_time)
-    source,path,cost = graph.shortest_paths(DESTINATION)
-    dijkstra_time = time.time()
-    print "Time for Dijkstra: "+str(dijkstra_time - graph_time)
-    c.execute('''CREATE TABLE Path (source text, path text, cost text) ''')
-    for i in range (len(source)):
-        if source [i] == DESTINATION : 
-            temp_path = source[i]
-        elif not path[i]:
-            a = 0 
-        else:
-            temp_path = path [i][1]
-        values = [str(source[i]),str(temp_path),str(cost[i]),]
-        c.execute("INSERT INTO Path VALUES (?,?,?)",values)
-        conn.commit()
-        db_time = time.time()
-    print "Time for db: "+str(db_time - dijkstra_time)
-    
+    counter = 0 
+    for dest in DESTINATION:
+        print dest
+        start_time = time.time()
+        graph = GraphShortestPaths(GRID_SIZE,dest)
+        graph_time = time.time()
+        print "Time for  Graph: "+str(graph_time - start_time)
+        source,path,cost = graph.shortest_paths(dest)
+        dijkstra_time = time.time()
+        print "Time for Dijkstra: "+str(dijkstra_time - graph_time)
+        c.execute('''CREATE TABLE Path'''+str(counter)+''' (source text, path text, cost text) ''')
+        for i in range (len(source)):
+            if source [i] == dest : 
+                temp_path = source[i]
+            elif not path[i]:
+                a = 0 
+            else:
+                temp_path = path [i][1]
+            values = [str(source[i]),str(temp_path),str(cost[i]),]
+            c.execute("INSERT INTO Path"+str(counter)+" VALUES (?,?,?)",values)
+            conn.commit()
+            db_time = time.time()
+        print "Time for db: "+str(db_time - dijkstra_time)
+        counter += 1     
+
+@app.route('/cpu', methods = ['GET', 'POST'])
+def post_cpu():
+    a = (request.get_json())[0] 
+    print a 
+    for key, value in a.items() :
+        if key == "cpu":
+            measured_cpu = value
+    print measured_cpu
+    z = measured_cpu
+    #Calculate Kalman for next time interval. input from file 
+    try:
+        with open("./file.txt") as fp:
+            temp = fp.readlines()
+        temp = [x.strip() for x in temp] 
+        p0 = float(temp[0])
+        x0 = float(temp[1])
+    except IOError:
+        p0 = P0
+        x0 = X0
+        
+    print p0 , x0  
+      # Q, R orismena stathera 
+      # x0 , P0 from file 
+    xkp = x0 
+    pkp = p0 + Q 
+    Kk = pkp / (pkp + R)
+    xke = xkp + Kk * (z - xkp)
+    pk = ( 1 - Kk ) * pkp 
+    x0 = xke # return please
+    p0 = pk   # return please
+ 
+    print x0 
+
+    #write cpu availability for next time interval
+    with open('./file.txt', 'a') as the_file:
+            the_file.write(str(p0)+'\n')
+            the_file.write(str(x0)+'\n')
+            the_file.write(str(z)+'\n')
+    return "ok"
 
 @app.route('/', methods = ['GET', 'POST'])
 def post_image():
@@ -59,18 +107,29 @@ def post_image():
         return "GET \n"
     if request.method == 'POST':
         start_time = time.time()
-        temp_json = json.load(request.files['time'])
-        communication_time = temp_json['time']
-        transmission_time = start_time-int(communication_time)
+        #temp_json = json.load(request.files['time'])
+        #communication_time = temp_json['time']
+        #transmission_time = start_time-int(communication_time)
         #print "Transmission time: "+ str(transmission_time)
+        start_time = time.time()
         file = request.files['file']
+        start_time = time.time()
         filename = secure_filename(file.filename)
         file.save(filename)
         dirr = os.getcwd()
         osname = os.path.join(dirr, '')
         dest_img = osname + filename
+        try:
+            with open("./file.txt") as fp:
+                temp = fp.readlines()
+            temp = [x.strip() for x in temp] 
+            z0 = float(temp[2])
+        except IOError:
+            z0 = 0 
         try: 
             results = d.find_distance_and_angle(dest_img)  ### pairnei path
+            print results
+            results = results+ (z0,)
             os.remove(dest_img)
             end_time = time.time()-start_time
             print "Computational time for Image Recognition :"+str(end_time)
@@ -96,6 +155,8 @@ def path_planning():
             x = value
         elif key == "y" :
             y = value 
+        elif key == "dest":
+            dest = value
         else :
             orientation = value
     path_to_node, cost_to_node  = reconstruct(x,y,iref,jref,GRID_SIZE)
@@ -106,8 +167,11 @@ def path_planning():
         if not candidate_path:
             continue ;
         search = candidate_path[0]
-        c.execute('SELECT * FROM Path WHERE source LIKE ?' , (str(search)+'%',))
+        print "Neighbour: "+ str(search )
+        #c.execute('SELECT * FROM Path WHERE source LIKE ?' , (str(search)+'%',))
+        c.execute('SELECT * FROM Path'+str(dest)+' WHERE source LIKE ?' , (str(search)+':%',))
         temp1 = c.fetchall()
+        print temp1
         templist = []
         for x in temp1: 
             templist.append(map(str, x))
@@ -115,15 +179,15 @@ def path_planning():
             temp_source = temp[0]
             temp_path = temp[1]
             temp_cost = int(temp[2])
-            #print temp_source
-            if temp_source == DESTINATION:
+            print temp_source
+            if temp_source == DESTINATION[dest]:
                 print "Target eliminitated"
-                target_node = temp.source
+                target_node = DESTINATION[dest]
                 almost = target_node.rsplit(":",1)[0]
                 a = almost.rsplit(":",1)[0]
                 b = almost.rsplit(":",1)[1]
                 return_list = []
-                return_listeappend(a)
+                return_list.append(a)
                 return_list.append(b)
                 ##
                 cost = temp_cost + cost_to_node[path_to_node.index(candidate_path)]
@@ -151,7 +215,7 @@ def path_planning():
                 cost_for_move = 1
                 break 
             search = return_path
-            c.execute('SELECT * FROM Path WHERE source LIKE ?' , (str(return_path),))
+            c.execute('SELECT * FROM Path'+str(dest)+' WHERE source LIKE ?' , (str(return_path)+':%',))
             temp1 = c.fetchall()
             temp = map(str,temp1)
             target_node = temp[1]

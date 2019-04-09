@@ -17,7 +17,7 @@ S1 = str(CONFIG["camera"]["vertical_servo_pin"])
 S2 = str(CONFIG["camera"]["horizontal_servo_pin"])
 CAMERA_RESOLUTION = CONFIG["camera"]["resolution"]
 SCANNING_STEP = CONFIG["camera"]["scanning_step"]
-OFFLOAD = CONFIG["offload"]
+#OFFLOAD = CONFIG["offload"]
 POST_URL = CONFIG["post_url"]
 
 class SelfLocator(): 
@@ -29,7 +29,7 @@ class SelfLocator():
 
     # Scan the area (at most twice) seeking for Beacons. Capture pictures and calculate distance and angle 
     # from them.
-    def dna_from_beacons(self):
+    def dna_from_beacons(self,OFFLOAD):
         beacons_found = 0
         step = self.step
         if OFFLOAD:
@@ -67,9 +67,13 @@ class SelfLocator():
                         files = [("time", ("datas", json.dumps(payload), "application/json")), 
                                 ("file", ("temp", open('./images/candidate' + str(pulse_width) + ".jpg", "rb"),'application/octet-stream'))]
                         r = requests.post(POST_URL, files=files)
-                        if (r.status_code == 404): 
+                        end_time = time.time()-start_time
+                        print "Total time for Image recognition: " +str(end_time)
+
+			if (r.status_code == 404): 
                             raise BeaconNotFoundError
-                        d, a, c = json.loads(r.text)
+                        d, a, c, z0 = json.loads(r.text)
+			print "CPU availability of server: " + str(z0)
                     else :
                         d, a, c = Dna().find_distance_and_angle('images/candidate'+str(pulse_width)+'.jpg')
                         end_time = time.time()-start_time
@@ -96,7 +100,7 @@ class SelfLocator():
                     with open(os.devnull, 'wb') as devnull:
                         subprocess.check_call(['sudo', 'python', 'turn_head.py', '-s', S1, '-w', '1600'], 
                                 stdout=devnull, stderr=subprocess.STDOUT)
-                    return distance, angle, color
+                    return distance, angle, color, z0 
 
             # If no 2 beacons are found, try again with a smaller step
             step = step / 2 
