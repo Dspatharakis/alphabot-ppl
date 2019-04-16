@@ -33,7 +33,7 @@ class Dna(object):
 	# loop over the boundaries, find the most fitting color 
 	for boundaries in COLOR_BOUNDARIES:
 		print("")
-    		if (color == 0):
+    		'''if (color == 0):
         		print("Looking for the Red Beacon...")
     		elif (color == 1):
         		print("Looking for the Blue Beacon...")
@@ -42,7 +42,7 @@ class Dna(object):
     		elif (color == 3):
         		print("Looking for the Yellow Beacon...")
     		else:
-        		print("Looking for the Orange Beacon...")		
+        		print("Looking for the Orange Beacon...")'''		
     		for (lower, upper) in boundaries:
 			# create NumPy arrays from the boundaries
         		lower = np.array(lower, dtype = "uint8")
@@ -77,7 +77,7 @@ class Dna(object):
                                 if not(width >= 100):
                                         raise BeaconNotValidError
                                 # 1: width to height ratio must be within the range of [0.37, 0.45]
-            			elif not((width/height >= 0.37) and (width/height <= 0.45)):
+            			elif not((width/height >= 0.36) and (width/height <= 0.45)):
                 			raise BeaconNotValidError
             			# 2: angle must be within the range of [-5, 5]
             			elif not(angle >= -5 and angle <= 5):
@@ -100,18 +100,21 @@ class Dna(object):
             raise BeaconNotFoundError
     	    exit()
 
-
 	if (curr_color == 0):
-    		print("\nRed Beacon identified!")
+	    print("Red Beacon identified!")
 	elif (curr_color == 1):
-    		print("\nBlue Beacon identified!")
+	    print("Blue Beacon identified!")
 	elif (curr_color == 2):
-    		print("\nPurple Beacon identified!")
+	    print("Purple Beacon identified!")
 	elif (curr_color == 3):
-    		print("\nYellow Beacon identified!")
+	    print("Yellow Beacon identified!")
+	elif (curr_color == 4):
+	    print("Green Beacon identified!")
+	elif (curr_color == 5):
+       	    print("Brown Beacon identified!")
 	else:
-    		print("\nOrange Beacon identified!")	
-        
+	    print("Black Beacon identified!")
+
         return curr_cnt, curr_color
     
     # Calculate detected Beacon's contour

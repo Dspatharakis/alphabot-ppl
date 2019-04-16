@@ -1,7 +1,9 @@
 import RPi.GPIO as GPIO
 import time
+import random
 import sys
 import signal
+import csv
 from math import pi, fabs, cos, sin 
 from alphabot import AlphaBot
 import multiprocessing
@@ -21,8 +23,8 @@ B = 6.8064#-1.2869597
 C = 0.166486#0.16225248
 D = 5.55511#-0.3943191
 
-F = 7.092
-G = 318.5
+F = 2.061# 7.092
+G = 308.1 #318.5
 
 class MicroControler(object) :
 
@@ -38,14 +40,16 @@ class MicroControler(object) :
         fref = int(a[5])
         orientation = 0 
         rotational = 0 
-        e = 0.2
+        e = 0.4
         vmax = 100
         vmin= 20
+	wrlist, wllist , ur, ul, x1, x2, x3, duration, timestamp = ([] for i in range(9))
 
         if fref!=fo:
             rotational = 1
             #TODO uncomment
             #T = ((fabs(fref)+6.2687)/134.7328)
+	    e = 0.2
             T = ((fabs(fref)+F)/G)
 
         fref = fref*pi / 180
@@ -53,7 +57,7 @@ class MicroControler(object) :
         moves = 0
         
         dt = T
-        while moves<100:
+        while moves<4:
             moves += 1
             # set velocities to reach xref,yref,fref
             # prwta peristrofikh meta metaforikh
@@ -65,11 +69,11 @@ class MicroControler(object) :
                 #    dt = ((fabs(fabs(fref*180/pi)-fabs(fo*180/pi))+6.2687)/134.7328)
                 w = L*(fref-fo)/(dt*2*R) # xronos misos diplasio w
                 a = fabs(w) / w
-		w = 12 
+		w = 12
 		right_voltage = (w - B)/A
                 left_voltage =  (w - D)/C
 		w = w* a
-		
+		df = fref 
                 #print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
                 if w < 0:  #prepei na stripsw pros ta deksia ( + , + )
                     orientation = 2
@@ -79,7 +83,7 @@ class MicroControler(object) :
                     orientation = 3
                     right_voltage= -right_voltage
                     left_voltage= -left_voltage
-                print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
+                #print ("right_voltage: "+str(right_voltage)+ " left_voltage: "+str(left_voltage))
             
             elif (fabs(fabs(xref)-fabs(xo))>= 0.05 and (rotational!= 1)):
 
@@ -100,7 +104,6 @@ class MicroControler(object) :
                         #dt = dt * 1.01
                         w = -14 #(xref-xo)/(R*dt)
                     else: break 
-                print w 
                 right_voltage = (abs(w) - B)/A
                 left_voltage =  (abs(w) - D)/C
                 
@@ -120,7 +123,7 @@ class MicroControler(object) :
                 break
             print ("To dt einai auth th fora : ")+str(dt)
             #print ("To w einai : ")+str(w)
-            print ("right voltage :" + str(right_voltage) , "left_voltage "+ str(left_voltage))
+            #print ("right voltage :" + str(right_voltage) , "left_voltage "+ str(left_voltage))
             #print ("apostasi apo stoxo se cm: "+str(fabs(xref-xo)) )
             Ab.setMotor(right_voltage, left_voltage) # PRWTA RIGHT META LEFT !!! EINAI ANAPODA STHN SETMOTOR
             #fork processes and grab results after dt
@@ -147,7 +150,7 @@ class MicroControler(object) :
                 dtr = return_dict[2]
                 #TODO
                 if wr > A*vmax+B :
-                    print "measured maximum wr "
+                    #print "measured maximum wr "
                     wr = A * vmax +B
             except: 
                 #print ("error1")
@@ -160,7 +163,7 @@ class MicroControler(object) :
                 dtl = return_dict[3]
                 #TODO
                 if wl > C*vmax+D :
-                    print "measured maximum wl "
+                    #print "measured maximum wl "
                     wl = C * vmax +D
             except: 
                 #print ("error2")
@@ -168,24 +171,11 @@ class MicroControler(object) :
                 #wl = 0 
                 counter = counter -1 
                 dtl = dt
-            if counter == 2 :
+            #if counter == 2 :
                 #dt = (dtl+dtr)/counter
-                print "ok"
-            elif counter==0 and rotational==1:
-                print ("two errors when reading from light sensors")
-                #wr = (fref-fo)*L/(2*R*dt) # xronos misos diplasio w
-                #wl = wr 
-                #break  
-                #wr = 0 
-                #wl = 0 
-            #if wr == 0 and wl != 0 :
-            #    wr = wl 
-            #    dtr= dtl
-            #    dt = (dtl+dtr)/2
-            #elif wl == 0 and wr != 0 :
-            #    wl = wr
-            #    dtl = dtr
-            #    dt = (dtl+dtr)/2
+                #print "ok"
+            #elif counter==0 and rotational==1:
+                #print ("two errors when reading from light sensors")
          
         #calculate new xo,yo,fo
             if orientation == 3: # tou eipa na stripsei aristera epitopou 
@@ -199,35 +189,43 @@ class MicroControler(object) :
                 wr= -wr
                 wl= -wl
 	    if (dt * R*(wr-wl)/L)> 0.7:
-		c = 0.78
+		c = 1 
 	    else:
                 c = 1 
-            fo = fo + (dt * R*(wr-wl)/L)/c
+	    if orientation == 1 or orientation == 0 : 
+                fo = fo + (dt * R*(wr-wl)/L)/c
+		fo = random.uniform(-3.0,3.0)
+		fo = fo* pi/180 
+	    else : 
+		fo = df 
             print ("Measured  wr: "+str(round(wr,2))+" rad/s" , "  wl: "+str(round(wl,2))+" rad/s", " dt of mesaurement: "+ str(round(dt,2)) +" ms",  " Angle from initial orientation of this step, f0: "+ str(round((fabs(fref*180/pi)-fabs((fo*180/pi))),2))+" degrees")
             
-            #if fo > 2*pi : 
-            #    fo = fo - 2*pi
-            #    print "exw kanei ena kuklo"
-                # estw oti exw kanei kuklo mhdenise
-            #if fo < -2*pi : 
-            #    fo = fo + 2*pi
-            #    print "exw kanei ena kuklo"
-            
-                #print ("phgainw opisthen")
             if orientation ==0  or orientation==1:
                 xo = xo + (dt*cos(fo)*R*(wr+wl)/2)/0.7 
                 yo = yo + dt*sin(fo)*R*(wr+wl)/2 
             print ("Measured values from light sensors:  xo: "+str(round(xo*100,2))+" cm", " yo: "+str(round(yo*100,2)) +" cm",  " fo: "+str(round((fo*180/pi),2))+" degrees")
 
             Ab.stop()
+            wrlist.append(wr)
+            wllist.append(wl)
+            ur.append(right_voltage)
+            ul.append(left_voltage)
+            x1.append(xo)
+            x2.append(yo)
+            x3.append(fo)
+            duration.append(dt)
+	    timestamp.append(time.time())
+
+	
             #TODO edw thelei 0.5 sleep
-            time.sleep(1.5)
-        
+            time.sleep(1)
+                               
+  
         Ab.stop()
         xo = round(xo*100,2)
         yo = round(yo*100,2)
         fo = round(fo *180 / pi,2) 
-        return xo,yo,fo
+        return xo,yo,fo,wrlist,wllist,ur,ul,x1,x2,x3,duration,timestamp
         
 
     def right_velocity(self, procnum, return_dict):

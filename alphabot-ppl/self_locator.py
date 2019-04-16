@@ -72,11 +72,15 @@ class SelfLocator():
 
 			if (r.status_code == 404): 
                             raise BeaconNotFoundError
-                        d, a, c, z0 = json.loads(r.text)
+                        d, a, c, z0, x0, cores, comput_time = json.loads(r.text)
 			print "CPU availability of server: " + str(z0)
                     else :
                         d, a, c = Dna().find_distance_and_angle('images/candidate'+str(pulse_width)+'.jpg')
                         end_time = time.time()-start_time
+			comput_time = "none"
+			cores = "none"
+			z0 = "none"
+			x0 = "none"
                         #print "Total time for Image recognition: " +str(end_time)
 
                     # Check for already-found color
@@ -100,7 +104,7 @@ class SelfLocator():
                     with open(os.devnull, 'wb') as devnull:
                         subprocess.check_call(['sudo', 'python', 'turn_head.py', '-s', S1, '-w', '1600'], 
                                 stdout=devnull, stderr=subprocess.STDOUT)
-                    return distance, angle, color, z0 
+                    return distance, angle, color, z0, x0,cores, comput_time 
 
             # If no 2 beacons are found, try again with a smaller step
             step = step / 2 

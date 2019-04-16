@@ -34,87 +34,92 @@ class Dna(object):
 	curr_width = 0	
 	# loop over the boundaries, find the most fitting color 
 	for boundaries in COLOR_BOUNDARIES:
-		'''print("")
-    		if (color == 0):
-        		print("Looking for the Red Beacon...")
-    		elif (color == 1):
-        		print("Looking for the Blue Beacon...")
-    		elif (color == 2):
-        		print("Looking for the Purple Beacon...")
-    		elif (color == 3):
-        		print("Looking for the Yellow Beacon...")
-    		else:
-        		print("Looking for the Orange Beacon...")		
-    		'''
-                for (lower, upper) in boundaries:
-			# create NumPy arrays from the boundaries
-        		lower = np.array(lower, dtype = "uint8")
-        		upper = np.array(upper, dtype = "uint8") 
-        		# find the colors within the specified boundaries and apply
-        		# the mask
-        		mask = cv2.inRange(image, lower, upper)
-                        # If searching for red, combine masks
-                        if (color == 0):
-                            mask = mask | cv2.inRange(image, np.array([0, 140, 115]), np.array([5, 200, 200]))
- 
-                        try:
-				# find contour based on colour
-        	                cnts = cv2.findContours(mask.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        		    	cnts = imutils.grab_contours(cnts)
-        		    	c = max(cnts, key = cv2.contourArea)
-			    	marker = cv2.minAreaRect(c)
+            if (color == 0):
+		print("Looking for the Red Beacon...")
+	    elif (color == 1):
+		print("Looking for the Blue Beacon...")
+	    elif (color == 2):
+		print("Looking for the Purple Beacon...")
+	    elif (color == 3):
+		print("Looking for the Yellow Beacon...")
+	    elif (color == 4):
+		print("Looking for the Green Beacon...")
+	    elif (color == 5):
+		print("Looking for the Brown Beacon...")
+	    else:
+		print("Looking for the Black Beacon...")
+            for (lower, upper) in boundaries:
+                # create NumPy arrays from the boundaries
+                lower = np.array(lower, dtype = "uint8")
+                upper = np.array(upper, dtype = "uint8") 
+                # find the colors within the specified boundaries and apply
+                # the mask
+                mask = cv2.inRange(image, lower, upper)
+                # If searching for red, combine masks
+                if (color == 0):
+                    mask = mask | cv2.inRange(image, np.array([0, 140, 115]), np.array([5, 200, 200]))
 
-			    	# Always looking for cylinders sitting on their bottom
-            		    	if (marker[1][0] < marker[1][1]): 
-                	    		width = marker[1][0]
-                			height = marker[1][1]
-                			angle = marker[2]
-            			else:
-                			# Cannot be sitting on their side
-                			raise BeaconNotValidError
-            			#print("Candidate contour width, height and angle:")
-            			#print round(width), round(height), round(angle, 2)
-            
-            			# Check if feasible beacon marker
-                                # 0: (WEAK) width must be greater than 100 pixels
-                                if not(width >= 100):
-                                        raise BeaconNotValidError
-                                # 1: width to height ratio must be within the range of [0.37, 0.45]
-            			elif not((width/height >= 0.37) and (width/height <= 0.45)):
-                			raise BeaconNotValidError
-            			# 2: angle must be within the range of [-5, 5]
-            			elif not(angle >= -5 and angle <= 5):
-                			raise BeaconNotValidError
-			
-                        except (BeaconNotValidError, ValueError):
-				#print('Not found!')
-                                width = 0
-            			continue	
-		if (width > curr_width):
-            		curr_color = color
-            		curr_width = width
-			curr_cnt = c
-                        break
+                try:
+                        # find contour based on colour
+                        cnts = cv2.findContours(mask.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                        cnts = imutils.grab_contours(cnts)
+                        c = max(cnts, key = cv2.contourArea)
+                        marker = cv2.minAreaRect(c)
 
-    		color += 1
+                        # Always looking for cylinders sitting on their bottom
+                        if (marker[1][0] < marker[1][1]): 
+                                width = marker[1][0]
+                                height = marker[1][1]
+                                angle = marker[2]
+                        else:
+                                # Cannot be sitting on their side
+                                raise BeaconNotValidError
+                        #print("Candidate contour width, height and angle:")
+                        #print round(width), round(height), round(angle, 2)
+    
+                        # Check if feasible beacon marker
+                        # 0: (WEAK) width must be greater than 100 pixels
+                        if not(width >= 100):
+                                raise BeaconNotValidError
+                        # 1: width to height ratio must be within the range of [0.37, 0.45]
+                        elif not((width/height >= 0.36) and (width/height <= 0.45)):
+                                raise BeaconNotValidError
+                        # 2: angle must be within the range of [-5, 5]
+                        elif not(angle >= -5 and angle <= 5):
+                                raise BeaconNotValidError
+                
+                except (BeaconNotValidError, ValueError):
+                            #print('Not found!')
+                            width = 0
+                            continue	
+            if (width > curr_width):
+                curr_color = color
+               	curr_width = width
+		curr_cnt = c
+                break
+
+    	    color += 1
+            print color
 
 	if (curr_width == 0):
     	    print "\nNo Beacon detected!"
             raise BeaconNotFoundError
     	    exit()
 
-
 	if (curr_color == 0):
-    		print("\nRed Beacon identified!")
+	    print("Red Beacon identified!")
 	elif (curr_color == 1):
-    		print("\nBlue Beacon identified!")
+	    print("Blue Beacon identified!")
 	elif (curr_color == 2):
-    		print("\nPurple Beacon identified!")
+	    print("Purple Beacon identified!")
 	elif (curr_color == 3):
-    		print("\nYellow Beacon identified!")
+	    print("Yellow Beacon identified!")
+	elif (curr_color == 4):
+	    print("Green Beacon identified!")
+	elif (curr_color == 5):
+       	    print("Brown Beacon identified!")
 	else:
-    		print("\nOrange Beacon identified!")	
-        
+	    print("Black Beacon identified!")
         return curr_cnt, curr_color
     
     # Calculate detected Beacon's contour

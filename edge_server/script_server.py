@@ -19,7 +19,7 @@ def main():
     while True:
         measured_cpu = subprocess.check_output(["docker", "stats", "--no-stream", "--format", "{{ .CPUPerc }}"] )# , ">", "./log.txt"])
         measured_cpu = (float(measured_cpu[:-2]))
-        if measured_cpu > 0.1 :
+        if measured_cpu > 0.2 :
             mean_cpu += measured_cpu
             counter += 1 
          
@@ -31,7 +31,7 @@ def main():
                 mean_cpu = mean_cpu /float(counter)
             mean_cpu = s 
             print "Cpu utilization of this time interval: "+ str(mean_cpu)
-            payload = [{"cpu": mean_cpu}]            
+            payload = [{"cpu": mean_cpu,"s": s}]            
             r = requests.post(post_url, json=payload)
             counter = 0
             mean_cpu = 0
@@ -39,6 +39,7 @@ def main():
         ##### KATANOMI GIA UPDATE CORES STO CONTAINER        
             mu, sigma = 0.75, 0.16 # mean and standard deviation
             s = np.random.normal(mu, sigma)
+            if s < 0.3: s = 0.3
             print "Number of cores: "+str(s) 
             number_of_cores = s #/ float(100 )
             with open(os.devnull, 'wb') as devnull: # suppress output

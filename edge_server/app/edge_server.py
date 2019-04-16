@@ -68,6 +68,8 @@ def post_cpu():
     for key, value in a.items() :
         if key == "cpu":
             measured_cpu = value
+        else:
+            true_allocated_cores = value
     print measured_cpu
     z = measured_cpu
     #Calculate Kalman for next time interval. input from file 
@@ -77,11 +79,10 @@ def post_cpu():
         temp = [x.strip() for x in temp] 
         p0 = float(temp[0])
         x0 = float(temp[1])
+        true_allocated_cores 
     except IOError:
         p0 = P0
         x0 = X0
-        
-    print p0 , x0  
       # Q, R orismena stathera 
       # x0 , P0 from file 
     xkp = x0 
@@ -91,14 +92,12 @@ def post_cpu():
     pk = ( 1 - Kk ) * pkp 
     x0 = xke # return please
     p0 = pk   # return please
- 
-    print x0 
-
     #write cpu availability for next time interval
     with open('./file.txt', 'a') as the_file:
             the_file.write(str(p0)+'\n')
             the_file.write(str(x0)+'\n')
             the_file.write(str(z)+'\n')
+            the_file.write(str(true_allocated_cores)+'\n') 
     return "ok"
 
 @app.route('/', methods = ['GET', 'POST'])
@@ -106,11 +105,6 @@ def post_image():
     if request.method == 'GET':
         return "GET \n"
     if request.method == 'POST':
-        start_time = time.time()
-        #temp_json = json.load(request.files['time'])
-        #communication_time = temp_json['time']
-        #transmission_time = start_time-int(communication_time)
-        #print "Transmission time: "+ str(transmission_time)
         start_time = time.time()
         file = request.files['file']
         start_time = time.time()
@@ -124,15 +118,20 @@ def post_image():
                 temp = fp.readlines()
             temp = [x.strip() for x in temp] 
             z0 = float(temp[2])
+            x0 = float(temp[1])
+            cores = float(temp[3])
         except IOError:
             z0 = 0 
         try: 
             results = d.find_distance_and_angle(dest_img)  ### pairnei path
             print results
             results = results+ (z0,)
+            results = results+ (x0,)
+            results = results+ (cores,)
             os.remove(dest_img)
             end_time = time.time()-start_time
             print "Computational time for Image Recognition :"+str(end_time)
+            results = results+ (end_time,)
             return jsonify(results)
         except BeaconNotFoundError:
             os.remove(dest_img)
@@ -192,8 +191,8 @@ def path_planning():
                 ##
                 cost = temp_cost + cost_to_node[path_to_node.index(candidate_path)]
                 cost_for_move = cost_to_node[path_to_node.index(candidate_path)]
-                #return_list.append(cost_for_move) 
-                #print cost_for_move
+                return_list.append(cost_for_move) 
+                print "cost for move : " + str(cost_for_move)
                 ##
                 print "Computational time for dijkstra: " + str(time.time()-start_time)
                 return jsonify(return_list)
@@ -231,8 +230,9 @@ def path_planning():
     return_list.append(a)
     return_list.append(b)
     ##
-    #return_list.append(cost_for_move) 
-    #print cost_for_move
+    return_list.append(cost_for_move) 
+    print "cost for move : " + str(cost_for_move)
+    ##
     print "Computational time for dijkstra: " + str(time.time()-start_time)
     return jsonify(return_list)
 

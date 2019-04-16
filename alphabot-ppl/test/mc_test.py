@@ -9,8 +9,7 @@ M = MicroControler()
 # - sth gwnia shmainei stripse deksia
 # + sth gwnia shmainei stripse aristera
 
-a=[0,0,0,0,0,-40]
-a=[0,0,0,0,0,60]
+a=[0,0,0,0,0,90]
 
 #a=[0,0,0,-0.4,0,0]
 #a=[0,0,0,0.5,0,0]
@@ -41,4 +40,3 @@ M.move_and_control(a)
 4.7123889804 rad 270
 6.2831853072 rad 360
 '''
-
