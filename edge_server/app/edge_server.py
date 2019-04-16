@@ -92,8 +92,9 @@ def post_cpu():
     pk = ( 1 - Kk ) * pkp 
     x0 = xke # return please
     p0 = pk   # return please
+    print "X0 is for Kalman: " + str(x0) 
     #write cpu availability for next time interval
-    with open('./file.txt', 'a') as the_file:
+    with open('./file.txt', 'w') as the_file:
             the_file.write(str(p0)+'\n')
             the_file.write(str(x0)+'\n')
             the_file.write(str(z)+'\n')
@@ -124,10 +125,10 @@ def post_image():
             z0 = 0 
         try: 
             results = d.find_distance_and_angle(dest_img)  ### pairnei path
-            print results
             results = results+ (z0,)
             results = results+ (x0,)
             results = results+ (cores,)
+            print results
             os.remove(dest_img)
             end_time = time.time()-start_time
             print "Computational time for Image Recognition :"+str(end_time)
