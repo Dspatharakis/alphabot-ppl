@@ -67,8 +67,8 @@ grid:
   obstacles : [[[70,90],[100,160]],[[180,110],[230,140]]] 
   columns: 25
   rows: 25
-  beacons_columns: [13, 24, 24, 0, 1, 24] #13, 24]
-  beacons_rows: [24, 14, 23, 10, 24, 24] # 0 , 23]
+  beacons_columns: [13, 24, 0, 0, 1, 24] #13, 24]
+  beacons_rows: [24, 14, 0, 10, 24, 23] # 0 , 23]
   orientation_reference_row: 24
 
 kalman:
